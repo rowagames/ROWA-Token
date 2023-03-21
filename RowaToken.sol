@@ -52,31 +52,29 @@ contract RowaToken is
 
         startTime = block.timestamp;
         _unpause();
+
+        // transfer to vesting contract
+        _transfer(msg.sender, vestingContract, INITIAL_SUPPLY);
+    }
+
+    function snapshot() public onlyOwner {
+        _snapshot();
+    }
+
+    function pause() public onlyOwner {
+        _pause();
+    }
+
+    function unpause() public onlyOwner {
+        _unpause();
     }
 
     function _beforeTokenTransfer(
         address from,
         address to,
         uint256 amount
-    ) internal virtual override(ERC20, ERC20Snapshot, ERC20Pausable) {
+    ) internal override(ERC20, ERC20Snapshot) whenNotPaused {
         super._beforeTokenTransfer(from, to, amount);
-
-        // check if vesting contract is set and if it is not the owner
-        if (vestingContract != address(0) && from != owner()) {
-            // check if the transfer is from the vesting contract
-            require(
-                from != vestingContract,
-                "ROWAToken: transfers from vesting contract are not allowed"
-            );
-
-            // check if the transfer is to the vesting contract
-            require(
-                to != vestingContract,
-                "ROWAToken: transfers to vesting contract are not allowed"
-            );
-
-            emit TokenTransfer(from, to, amount);
-        }
 
         if (from == address(0)) {
             // minting
@@ -85,5 +83,9 @@ contract RowaToken is
                 "ROWAToken: total supply exceeded"
             );
         }
+    }
+
+    function decimals() public pure override returns (uint8) {
+        return DECIMALS;
     }
 }
