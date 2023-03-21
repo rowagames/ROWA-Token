@@ -9,6 +9,11 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
+/**
+ * @title RowaVesting
+ * @author guraygrkn@protonmail.com
+ * @notice Vesting contract for ROWA Token (ROWA) for Value Generation Pool, LP & Staking Rewards, Public Sale, Private Sale, Seed Sale, Initial Liquidity, Reserve, Team, Advisors, Partnerships & Marketing.
+ */
 contract RowaVesting is Ownable, ReentrancyGuard {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
@@ -106,6 +111,11 @@ contract RowaVesting is Ownable, ReentrancyGuard {
     uint256 public constant PARTNERSHIPS_VESTING_PERIOD = 1 * 30 days; // 1 month
     uint256 public PARTNERSHIPS_INITIAL_VESTING_PERCENTAGE = 2_000; // 20% unlock
 
+    /**
+     * @dev Struct for the vesting schedule of a token holder. A vesting schedule is a sequence of slices of tokens that are released to the beneficiary progressively over time.
+     * The amount of tokens released at each slice is calculated from the vesting schedule parameters.
+     * The vesting schedule parameters are immutable once the vesting schedule is created.
+     */
     struct VestingSchedule {
         // whether or not the vesting has been initialized
         bool initialized;
@@ -191,20 +201,6 @@ contract RowaVesting is Ownable, ReentrancyGuard {
     fallback() external payable {}
 
     /**
-     * @dev Initializes a vesting schedule.
-     */
-    function start() public onlyOwner {
-        require(
-            vestingSchedulesTotalAmount == 0,
-            "TokenVesting: vesting already started"
-        );
-        startVGPVesting();
-        startLPVesting();
-        startLiqVesting();
-        startReserveVesting();
-    }
-
-    /**
      * @dev Returns the number of vesting schedules associated to a beneficiary.
      * @return the number of vesting schedules
      */
@@ -257,6 +253,19 @@ contract RowaVesting is Ownable, ReentrancyGuard {
         return address(_token);
     }
 
+    /**
+     * @dev create a vesting schedule for a beneficiary. It is meant to be called by the owner and internally.
+     * @param beneficiary_ address of the beneficiary to whom vested tokens are transferred
+     * @param name_ name of the vesting schedule
+     * @param start_ the time (as Unix time) at which point vesting starts
+     * @param cliff_ duration in seconds of the cliff in which tokens will begin to vest
+     * @param duration_ duration in seconds of the period in which the tokens will vest
+     * @param slicePeriodSeconds_ period in seconds between slices
+     * @param amount_ total amount of tokens to be vested
+     * @param amountInitial_ amount of tokens to be released at the start of the vesting
+     * @param revokable_ whether the vesting is revokable or not
+     * @return the vesting schedule structure information
+     */
     function _createVestingSchedule(
         address beneficiary_,
         string memory name_,
@@ -272,12 +281,12 @@ contract RowaVesting is Ownable, ReentrancyGuard {
             this.getWithdrawableAmount() >= amount_,
             "TokenVesting: cannot create vesting schedule because not sufficient tokens"
         );
-        require(duration_ > 0, "TokenVesting: duration must be > 0");
-        require(amount_ > 0, "TokenVesting: amount must be > 0");
-        require(
-            slicePeriodSeconds_ >= 1,
-            "TokenVesting: slicePeriodSeconds must be >= 1"
-        );
+        // require(duration_ > 0, "TokenVesting: duration must be > 0");
+        // require(amount_ > 0, "TokenVesting: amount must be > 0");
+        // require(
+        //     slicePeriodSeconds_ >= 1,
+        //     "TokenVesting: slicePeriodSeconds must be >= 1"
+        // );
         bytes32 vestingScheduleId = this.computeNextVestingScheduleIdForHolder(
             beneficiary_
         );
@@ -620,11 +629,13 @@ contract RowaVesting is Ownable, ReentrancyGuard {
 
     /**
      * @dev Starts Public sale vesting for a given beneficiary.
+     * @param beneficiary_ the beneficiary of the tokens
+     * @param amount_ the amount of tokens to be vested
+     * @notice revokable is set to false for public sale vesting as it is not possible to revoke tokens that have already been sold
      */
     function createPublicSaleVesting(
         address beneficiary_,
-        uint256 amount_,
-        bool revocable_
+        uint256 amount_
     ) external onlyOwner {
         require(
             totalPSVested.add(amount_) <= TOTAL_PS_VESTED,
@@ -642,7 +653,7 @@ contract RowaVesting is Ownable, ReentrancyGuard {
             PS_VESTING_PERIOD,
             amount_,
             getInitialVestingAmount(amount_, PS_INITIAL_VESTING_PERCENTAGE),
-            revocable_
+            false
         );
 
         totalPSVested = totalPSVested.add(amount_);
@@ -650,11 +661,13 @@ contract RowaVesting is Ownable, ReentrancyGuard {
 
     /**
      * @dev Starts private sale token vesting for a given beneficiary.
+     * @param beneficiary_ the beneficiary of the tokens
+     * @param amount_ the amount of tokens to be vested
+     * @notice revokable is set to false for private sale vesting as it is not possible to revoke tokens that have already been sold
      */
     function createPrivateSaleVesting(
         address beneficiary_,
-        uint256 amount_,
-        bool revocable_
+        uint256 amount_
     ) external onlyOwner {
         require(
             totalPRIVSVested.add(amount_) <= TOTAL_PRIVS_VESTED,
@@ -673,7 +686,7 @@ contract RowaVesting is Ownable, ReentrancyGuard {
             PRIVS_VESTING_PERIOD,
             amount_,
             getInitialVestingAmount(amount_, PRIVS_INITIAL_VESTING_PERCENTAGE),
-            revocable_
+            false
         );
 
         totalPRIVSVested = totalPRIVSVested.add(amount_);
@@ -681,11 +694,14 @@ contract RowaVesting is Ownable, ReentrancyGuard {
 
     /**
      * @dev Starts seed sale token vesting for a given beneficiary.
+     * @param beneficiary_ the beneficiary of the tokens
+     * @param amount_ the amount of tokens to be vested
+     * @param revokable_ whether the vesting is revocable or not
      */
     function createSeedSaleVesting(
         address beneficiary_,
         uint256 amount_,
-        bool revocable_
+        bool revokable_
     ) external onlyOwner {
         require(
             totalSEEDSVested.add(amount_) <= TOTAL_SEEDS_VESTED,
@@ -704,7 +720,7 @@ contract RowaVesting is Ownable, ReentrancyGuard {
             SEEDS_VESTING_PERIOD,
             amount_,
             getInitialVestingAmount(amount_, SEEDS_INITIAL_VESTING_PERCENTAGE),
-            revocable_
+            revokable_
         );
 
         totalSEEDSVested = totalSEEDSVested.add(amount_);
@@ -712,11 +728,14 @@ contract RowaVesting is Ownable, ReentrancyGuard {
 
     /**
      * @dev Starts team vesting for a given beneficiary.
+     * @param beneficiary_ the beneficiary of the tokens
+     * @param amount_ the amount of tokens to be vested
+     * @param revokable_ whether the vesting is revocable or not
      */
     function createTeamVesting(
         address beneficiary_,
         uint256 amount_,
-        bool revocable_
+        bool revokable_
     ) external onlyOwner {
         require(
             totalTEAMVested.add(amount_) <= TOTAL_TEAM_VESTED,
@@ -735,7 +754,7 @@ contract RowaVesting is Ownable, ReentrancyGuard {
             TEAM_VESTING_PERIOD,
             amount_,
             getInitialVestingAmount(amount_, TEAM_INITIAL_VESTING_PERCENTAGE),
-            revocable_
+            revokable_
         );
 
         totalTEAMVested = totalTEAMVested.add(amount_);
@@ -743,11 +762,14 @@ contract RowaVesting is Ownable, ReentrancyGuard {
 
     /**
      * @dev Starts advisor vesting for a given beneficiary.
+     * @param beneficiary_ the beneficiary of the tokens
+     * @param amount_ the amount of tokens to be vested
+     * @param revokable_ whether the vesting is revocable or not
      */
     function createAdvisorVesting(
         address beneficiary_,
         uint256 amount_,
-        bool revocable_
+        bool revokable_
     ) external onlyOwner {
         require(
             totalADVISORSVested.add(amount_) <= TOTAL_ADVISORS_VESTED,
@@ -769,7 +791,7 @@ contract RowaVesting is Ownable, ReentrancyGuard {
                 amount_,
                 ADVISORS_INITIAL_VESTING_PERCENTAGE
             ),
-            revocable_
+            revokable_
         );
 
         totalADVISORSVested = totalADVISORSVested.add(amount_);
@@ -777,11 +799,14 @@ contract RowaVesting is Ownable, ReentrancyGuard {
 
     /**
      * @dev Starts partnerships vesting for a given beneficiary.
+     * @param beneficiary_ the beneficiary of the tokens
+     * @param amount_ the amount of tokens to be vested
+     * @param revokable_ whether the vesting is revocable or not
      */
     function createPartnershipsVesting(
         address beneficiary_,
         uint256 amount_,
-        bool revocable_
+        bool revokable_
     ) external onlyOwner {
         require(
             totalPARTNERSHIPSVested.add(amount_) <= TOTAL_PARTNERSHIPS_VESTED,
@@ -802,7 +827,7 @@ contract RowaVesting is Ownable, ReentrancyGuard {
                 amount_,
                 PARTNERSHIPS_INITIAL_VESTING_PERCENTAGE
             ),
-            revocable_
+            revokable_
         );
 
         totalPARTNERSHIPSVested = totalPARTNERSHIPSVested.add(amount_);
