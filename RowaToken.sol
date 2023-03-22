@@ -73,7 +73,7 @@ contract RowaToken is
         address from,
         address to,
         uint256 amount
-    ) internal override(ERC20, ERC20Snapshot) whenNotPaused {
+    ) internal override(ERC20, ERC20Snapshot, ERC20Pausable) whenNotPaused {
         super._beforeTokenTransfer(from, to, amount);
 
         if (from == address(0)) {
