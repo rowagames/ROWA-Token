@@ -281,21 +281,15 @@ contract RowaVesting is Ownable, ReentrancyGuard {
             this.getWithdrawableAmount() >= amount_,
             "TokenVesting: cannot create vesting schedule because not sufficient tokens"
         );
-        // require(duration_ > 0, "TokenVesting: duration must be > 0");
-        // require(amount_ > 0, "TokenVesting: amount must be > 0");
-        // require(
-        //     slicePeriodSeconds_ >= 1,
-        //     "TokenVesting: slicePeriodSeconds must be >= 1"
-        // );
         bytes32 vestingScheduleId = this.computeNextVestingScheduleIdForHolder(
             beneficiary_
         );
-        uint256 _cliff = start_.add(cliff_);
+
         vestingSchedules[vestingScheduleId] = VestingSchedule(
             true,
             name_,
             beneficiary_,
-            _cliff,
+            cliff_,
             start_,
             duration_,
             slicePeriodSeconds_,
@@ -487,40 +481,42 @@ contract RowaVesting is Ownable, ReentrancyGuard {
         VestingSchedule memory vestingSchedule
     ) internal view returns (uint256) {
         uint256 currentTime = getCurrentTime();
+        if (vestingSchedule.amountReleased < vestingSchedule.amountInitial) {
+            return
+                vestingSchedule.amountInitial.sub(
+                    vestingSchedule.amountReleased
+                );
+        }
+
         if (
             (currentTime < vestingSchedule.start) ||
             vestingSchedule.revoked == true
         ) {
             return 0;
-        } else if (
+        }
+
+        if (
             currentTime >= vestingSchedule.start.add(vestingSchedule.duration)
         ) {
             return
                 vestingSchedule.amountTotal.sub(vestingSchedule.amountReleased);
-        } else if (
-            vestingSchedule.amountReleased >= vestingSchedule.amountTotal
-        ) {
-            return 0;
-        } else if (
-            vestingSchedule.amountReleased < vestingSchedule.amountInitial
-        ) {
-            return
-                vestingSchedule.amountInitial.sub(
-                    vestingSchedule.amountReleased
-                );
-        } else {
-            uint256 timeFromStart = currentTime.sub(vestingSchedule.start);
-            uint secondsPerSlice = vestingSchedule.period;
-            uint256 vestedSlicePeriods = timeFromStart.div(secondsPerSlice);
-            uint256 vestedSeconds = vestedSlicePeriods.mul(secondsPerSlice);
-            uint256 vestedAmount = vestingSchedule
-                .amountTotal
-                .mul(vestedSeconds)
-                .div(vestingSchedule.duration);
-            vestedAmount = vestedAmount.sub(vestingSchedule.amountReleased);
-
-            return vestedAmount;
         }
+
+        if (vestingSchedule.amountReleased >= vestingSchedule.amountTotal) {
+            return 0;
+        }
+
+        uint256 timeFromStart = currentTime.sub(vestingSchedule.start);
+        uint secondsPerSlice = vestingSchedule.period;
+        uint256 vestedSlicePeriods = timeFromStart.div(secondsPerSlice);
+        uint256 vestedSeconds = vestedSlicePeriods.mul(secondsPerSlice);
+        uint256 vestedAmount = vestingSchedule
+            .amountTotal
+            .mul(vestedSeconds)
+            .div(vestingSchedule.duration);
+        vestedAmount = vestedAmount.sub(vestingSchedule.amountReleased);
+
+        return vestedAmount;
     }
 
     /**
