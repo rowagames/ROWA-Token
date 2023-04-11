@@ -334,13 +334,7 @@ contract RowaVesting is Ownable, ReentrancyGuard {
             unreleased
         );
 
-        if (equal(vestingSchedule.name, PS_VESTING_NAME)) {
-            totalPSVested = totalPSVested.sub(unreleased);
-        } else if (equal(vestingSchedule.name, PRIVS_VESTING_NAME)) {
-            totalPRIVSVested = totalPRIVSVested.sub(unreleased);
-        } else if (equal(vestingSchedule.name, SEEDS_VESTING_NAME)) {
-            totalSEEDSVested = totalSEEDSVested.sub(unreleased);
-        } else if (equal(vestingSchedule.name, TEAM_VESTING_NAME)) {
+        if (equal(vestingSchedule.name, TEAM_VESTING_NAME)) {
             totalTEAMVested = totalTEAMVested.sub(unreleased);
         } else if (equal(vestingSchedule.name, ADVISORS_VESTING_NAME)) {
             totalADVISORSVested = totalADVISORSVested.sub(unreleased);
@@ -349,18 +343,6 @@ contract RowaVesting is Ownable, ReentrancyGuard {
         }
 
         vestingSchedule.revoked = true;
-    }
-
-    /**
-     * @notice Withdraw the specified amount if possible.
-     * @param amount the amount to withdraw
-     */
-    function withdraw(uint256 amount) public nonReentrant onlyOwner {
-        require(
-            getWithdrawableAmount() >= amount,
-            "TokenVesting: not enough withdrawable funds"
-        );
-        _token.safeTransfer(owner(), amount);
     }
 
     /**
@@ -696,8 +678,7 @@ contract RowaVesting is Ownable, ReentrancyGuard {
      */
     function createSeedSaleVesting(
         address beneficiary_,
-        uint256 amount_,
-        bool revokable_
+        uint256 amount_
     ) external onlyOwner {
         require(
             totalSEEDSVested.add(amount_) <= TOTAL_SEEDS_VESTED,
@@ -716,7 +697,7 @@ contract RowaVesting is Ownable, ReentrancyGuard {
             SEEDS_VESTING_PERIOD,
             amount_,
             getInitialVestingAmount(amount_, SEEDS_INITIAL_VESTING_PERCENTAGE),
-            revokable_
+            false
         );
 
         totalSEEDSVested = totalSEEDSVested.add(amount_);
