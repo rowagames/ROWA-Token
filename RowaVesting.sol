@@ -495,7 +495,7 @@ contract RowaVesting is Ownable, ReentrancyGuard {
         uint256 vestedAmount = vestingSchedule
             .amountTotal
             .mul(vestedSeconds)
-            .div(vestingSchedule.duration);
+            .div(vestingSchedule.duration) + vestingSchedule.amountInitial;
         vestedAmount = vestedAmount.sub(vestingSchedule.amountReleased);
 
         return vestedAmount;
@@ -674,7 +674,6 @@ contract RowaVesting is Ownable, ReentrancyGuard {
      * @dev Starts seed sale token vesting for a given beneficiary.
      * @param beneficiary_ the beneficiary of the tokens
      * @param amount_ the amount of tokens to be vested
-     * @param revokable_ whether the vesting is revocable or not
      */
     function createSeedSaleVesting(
         address beneficiary_,
