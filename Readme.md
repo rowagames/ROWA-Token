@@ -1,6 +1,6 @@
 # ROWA Token Contract
 
-This is the official repository for the ROWA Token Contract. ROWA is an ERC20-compliant token, built on the Ethereum blockchain, and serves as the sole token for the ROWA Platform. It features various functionalities, including burnable, pausable, and snapshot capabilities.
+This is the official repository for ROWA Token Contract. ROWA is an ERC20-compliant token, built on the Ethereum blockchain, and serves as the sole token for ROWA Platform. It features various functionalities, including burnable, pausable, and snapshot capabilities.
 
 ## Tokenomics
 
@@ -11,7 +11,7 @@ This is the official repository for the ROWA Token Contract. ROWA is an ERC20-co
 
 ## Token Distribution & Vesting
 
-Refer to the token distribution and vesting details provided in the original question.
+Refer to the token distribution and vesting details provided below.
 
 ## Smart Contract
 
@@ -90,14 +90,6 @@ We appreciate contributions from the community. If you would like to contribute,
 
 Please note that your pull request may be rejected if it does not meet the quality and coding standards of the project.
 
-## Security
-
-If you discover a security vulnerability in this project, please report it privately to the development team. Do not disclose security vulnerabilities publicly.
-
-## License
-
-This project is licensed under the MIT License. Please see the [LICENSE](LICENSE) file for more information.
-
 
 # ROWA Vesting Contract
 
@@ -149,6 +141,14 @@ ROWA Vesting Contract provides the following functions:
 - The revoke function can be used by the contract owner to revoke a revocable vesting schedule, returning the unvested tokens to the contract owner. It is important to note that non-revocable vesting schedules cannot be revoked.
 - The `getVestingSchedule` function allows anyone to query the details of a vesting schedule for a given beneficiary and vesting type name. This can be useful for beneficiaries and third parties to keep track of vesting progress.
 - ROWA Vesting Contract is designed to be flexible and can be adapted to the specific needs of ROWA, such as adjusting vesting schedules or allocations as needed.
+
+## Security
+
+If you discover a security vulnerability in this project, please report it privately to the development team. Do not disclose security vulnerabilities publicly.
+
+## License
+
+This project is licensed under the MIT License. Please see the [LICENSE](LICENSE) file for more information.
 
 In summary, ROWA Vesting Contract provides a comprehensive and customizable solution for managing token vesting for ROWA project. By using this smart contract, the project can efficiently distribute tokens to various stakeholders while ensuring a fair and transparent vesting process.
 
