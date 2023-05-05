@@ -97,3 +97,59 @@ If you discover a security vulnerability in this project, please report it priva
 ## License
 
 This project is licensed under the MIT License. Please see the [LICENSE](LICENSE) file for more information.
+
+
+# ROWA Vesting Contract
+
+ROWA Vesting Contract is a smart contract deployed on the Polygon network designed to handle the token vesting process for the ROWA project. This contract allows the project to create and manage multiple vesting schedules for different categories of beneficiaries.
+
+## Features
+
+- Customizable vesting schedules for different categories of beneficiaries
+- Revocable and non-revocable vesting schedules
+- Token release function for beneficiaries to claim their vested tokens
+- Revoke function for the contract owner to revoke revocable vesting schedules
+- View function to check the vesting schedule details for a beneficiary
+
+## Vesting Schedules
+
+The contract supports the following vesting schedules:
+
+- Public Sale Vesting Schedule: Non-revocable vesting schedule for public sale participants.
+- Private Sale Vesting Schedule: Non-revocable vesting schedule for private sale participants.
+- Seed Sale Vesting Schedule: Non-revocable vesting schedule for seed sale participants.
+- Team Vesting Schedule: Revocable or non-revocable vesting schedule for team members.
+- Advisor Vesting Schedule: Revocable or non-revocable vesting schedule for advisors.
+- Partnerships Vesting Schedule: Revocable or non-revocable vesting schedule for partnerships.
+
+Each vesting schedule has its own predefined maximum allocation, vesting duration, cliff duration (where applicable), and vesting period.
+
+## Contract Functions
+
+ROWA Vesting Contract provides the following functions:
+
+- `createPublicSaleVesting(address beneficiary_, uint256 amount_)`: Starts Public Sale vesting for a given beneficiary. Can only be called by the contract owner.
+- `createPrivateSaleVesting(address beneficiary_, uint256 amount_)`: Starts Private Sale vesting for a given beneficiary. Can only be called by the contract owner.
+- `createSeedSaleVesting(address beneficiary_, uint256 amount_)`: Starts Seed Sale vesting for a given beneficiary. Can only be called by the contract owner.
+- `createTeamVesting(address beneficiary_, uint256 amount_, bool revokable_)`: Starts Team vesting for a given beneficiary. Can only be called by the contract owner.
+- `createAdvisorVesting(address beneficiary_, uint256 amount_, bool revokable_)`: Starts Advisor vesting for a given beneficiary. Can only be called by the contract owner.
+- `createPartnershipsVesting(address beneficiary_, uint256 amount_, bool revokable_)`: Starts Partnerships vesting for a given beneficiary. Can only be called by the contract owner.
+- `release(address beneficiary, string memory vestingName)`: Releases vested tokens for the beneficiary. Can be called by the beneficiary or anyone else.
+- `revoke(address beneficiary, string memory vestingName)`: Revokes a revocable vesting schedule. Can only be called by the contract owner.
+- `getVestingSchedule(address beneficiary, string memory vestingName)`: Returns the vesting schedule details for a given beneficiary and vesting type name.
+- `getCurrentTime()`: Returns the current time.
+- `getInitialVestingAmount(uint256 totalVested, uint256 initialVestingPercentage)`: Returns the initial vesting amount.
+- `equal(string memory a, string memory b)`: Compares two strings and returns true if they are equal, otherwise returns false. This function is used internally for comparison purposes.
+
+## Additional Notes
+
+- The vesting schedules are created and managed by the contract owner, ROWA.
+- The vesting schedules can be either revocable or non-revocable, depending on the type of vesting and requirements of ROWA.
+- Beneficiaries can claim their vested tokens by calling the release  function. The contract calculates the releasable tokens based on the vesting schedule's parameters and the current time.
+- The revoke function can be used by the contract owner to revoke a revocable vesting schedule, returning the unvested tokens to the contract owner. It is important to note that non-revocable vesting schedules cannot be revoked.
+- The `getVestingSchedule` function allows anyone to query the details of a vesting schedule for a given beneficiary and vesting type name. This can be useful for beneficiaries and third parties to keep track of vesting progress.
+- ROWA Vesting Contract is designed to be flexible and can be adapted to the specific needs of ROWA, such as adjusting vesting schedules or allocations as needed.
+
+In summary, ROWA Vesting Contract provides a comprehensive and customizable solution for managing token vesting for ROWA project. By using this smart contract, the project can efficiently distribute tokens to various stakeholders while ensuring a fair and transparent vesting process.
+
+
