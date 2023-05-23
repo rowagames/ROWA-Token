@@ -19,7 +19,6 @@ contract RowaToken is
     ERC20Pausable,
     Ownable
 {
-
     address public vestingContract;
 
     // Token Information
