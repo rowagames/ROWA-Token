@@ -5,13 +5,12 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
 
 /**
  * @title RowaVesting
  * @author guraygrkn@protonmail.com
  * @notice Vesting contract for ROWA Token (ROWA) for Value Generation Pool, LP & Staking Rewards, Public Sale, Private Sale, Seed Sale, Initial Liquidity, Reserve, Team, Advisors, Partnerships & Marketing.
+ * @dev Implements Ownable, ReentrancyGuard and SafeERC20
  */
 contract RowaVesting is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
