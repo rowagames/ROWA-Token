@@ -75,11 +75,11 @@ Before you can deploy the contract, make sure you have installed the required de
 ## Testing
 
 To run the tests, execute the following command:
-        ```bash
-    npx hardhat test
-    ```
-  
 
+```bash
+npx hardhat test
+```
+    
 This will run the test suite and display the results in your terminal.
 
 ## Contributing
