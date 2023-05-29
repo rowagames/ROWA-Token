@@ -36,7 +36,42 @@ describe("RowaToken and Vesting Contract", function () {
     );
     await vestingContract.deployed();
   });
+  it("createPublicSaleVesting should fail when called by non-owner", async function () {
+    const [owner, addr1, addr2] = await ethers.getSigners();
+    const nonOwnerVesting = vestingContract.connect(addr1);
 
+    // Assert
+    await expect(
+      nonOwnerVesting.createPublicSaleVesting(addr2.address, 100000)
+    ).to.be.revertedWith("Ownable: caller is not the owner");
+  });
+  it("createTeamVesting should fail when called by non-owner", async function () {
+    const [owner, addr1, addr2] = await ethers.getSigners();
+    const nonOwnerVesting = vestingContract.connect(addr1);
+
+    // Assert
+    await expect(
+      nonOwnerVesting.createTeamVesting(addr2.address, 100000, false)
+    ).to.be.revertedWith("Ownable: caller is not the owner");
+  });
+  it("createAdvisorVesting should fail when called by non-owner", async function () {
+    const [owner, addr1, addr2] = await ethers.getSigners();
+    const nonOwnerVesting = vestingContract.connect(addr1);
+
+    // Assert
+    await expect(
+      nonOwnerVesting.createAdvisorVesting(addr2.address, 100000, false)
+    ).to.be.revertedWith("Ownable: caller is not the owner");
+  });
+  it("createPartnershipsVesting should fail when called by non-owner", async function () {
+    const [owner, addr1, addr2] = await ethers.getSigners();
+    const nonOwnerVesting = vestingContract.connect(addr1);
+
+    // Assert
+    await expect(
+      nonOwnerVesting.createPartnershipsVesting(addr2.address, 100000, false)
+    ).to.be.revertedWith("Ownable: caller is not the owner");
+  });
   // Test 1: Smart contract deployment
   it("should deploy the smart contract correctly", async function () {
     expect(rowaToken.address).to.exist;
@@ -56,6 +91,14 @@ describe("RowaToken and Vesting Contract", function () {
   });
 
   // Test 5: Check if the vesting starts correctly and mints initial supply to the vesting contract
+  it("should correctly start vesting and mints initial supply to vesting contract", async function () {
+    await rowaToken.startVesting(vestingContract.address);
+    const vestingContractBalance = await rowaToken.balanceOf(
+      vestingContract.address
+    );
+    expect(vestingContractBalance).to.equal(await rowaToken.totalSupply());
+  });
+
   it("should correctly start vesting and mints initial supply to vesting contract", async function () {
     await rowaToken.startVesting(vestingContract.address);
     const vestingContractBalance = await rowaToken.balanceOf(
@@ -88,9 +131,11 @@ describe("RowaToken and Vesting Contract", function () {
       );
 
       // Create public sale vesting
-      await vestingContract
-        .connect(owner)
-        .createPublicSaleVesting(beneficiaryAddress, amount);
+      await expect(
+        vestingContract
+          .connect(owner)
+          .createPublicSaleVesting(beneficiaryAddress, amount)
+      ).to.be.emit(vestingContract, "PublicSaleVestingScheduleCreated");
 
       // Get the public sale vesting ID
       const vestingIndex =
@@ -275,6 +320,224 @@ describe("RowaToken and Vesting Contract", function () {
     );
   });
 
+  //Test the require statement in the release function:
+
+  it("Should revert startVGPVesting when trying to start vesting as a non-owner", async function () {
+    await rowaToken.startVesting(vestingContract.address);
+    const beneficiary = await addrs[8].getAddress();
+    const amount = BigNumber.from(1000000);
+
+    const beneficiarySigner = await ethers.getSigner(beneficiary);
+
+    await expect(
+      vestingContract.connect(beneficiarySigner).startVGPVesting()
+    ).to.be.revertedWith("Ownable: caller is not the owner");
+  });
+
+  it("Should revert startVGPVesting when trying to release more than initial locked amount", async function () {
+    await rowaToken.startVesting(vestingContract.address);
+    const beneficiary = await addrs[5].getAddress();
+    const amount = BigNumber.from(10000000000000);
+
+    await vestingContract.connect(owner).startVGPVesting();
+
+    const ownerAddress = await owner.getAddress();
+
+    const vestingScheduleId =
+      await vestingContract.computeVestingScheduleIdForAddressAndIndex(
+        ownerAddress,
+        0
+      );
+
+    await expect(
+      vestingContract.release(vestingScheduleId, amount)
+    ).to.be.revertedWith(
+      "TokenVesting: cannot release tokens, not enough vested tokens"
+    );
+  });
+
+  it("Should emit a VGPVestingScheduleCreated event when starting vesting for startVGPVesting", async function () {
+    await rowaToken.startVesting(vestingContract.address);
+    const beneficiary = await addrs[5].getAddress();
+    const amount = BigNumber.from(100000000000);
+
+    await expect(vestingContract.connect(owner).startVGPVesting()).to.be.emit(
+      vestingContract,
+      "VGPVestingScheduleCreated"
+    );
+
+    const ownerAddress = await owner.getAddress();
+
+    const vestingScheduleId =
+      await vestingContract.computeVestingScheduleIdForAddressAndIndex(
+        ownerAddress,
+        0
+      );
+
+    await vestingContract.release(vestingScheduleId, amount);
+  });
+
+  it("Should revert startVGPVesting when trying to start vesting more than once", async function () {
+    await rowaToken.startVesting(vestingContract.address);
+    const beneficiary = await addrs[5].getAddress();
+    const amount = BigNumber.from(100000000000);
+
+    await expect(vestingContract.connect(owner).startVGPVesting()).to.be.emit(
+      vestingContract,
+      "VGPVestingScheduleCreated"
+    );
+
+    await expect(
+      vestingContract.connect(owner).startVGPVesting()
+    ).to.be.revertedWith("VGP vesting already started");
+  });
+
+  it("Should revert startLPVesting when trying to start vesting more than once", async function () {
+    await rowaToken.startVesting(vestingContract.address);
+    const beneficiary = await addrs[5].getAddress();
+    const amount = BigNumber.from(100000000000);
+
+    await expect(vestingContract.connect(owner).startLPVesting()).to.be.emit(
+      vestingContract,
+      "LPVestingScheduleCreated"
+    );
+
+    await expect(
+      vestingContract.connect(owner).startLPVesting()
+    ).to.be.revertedWith("LP vesting already started");
+  });
+
+  it("Should revert startLPVesting when trying to release more than initial locked amount", async function () {
+    await rowaToken.startVesting(vestingContract.address);
+    const beneficiary = await addrs[5].getAddress();
+    const amount = BigNumber.from(10000000000000);
+
+    await vestingContract.connect(owner).startLPVesting();
+
+    const ownerAddress = await owner.getAddress();
+
+    const vestingScheduleId =
+      await vestingContract.computeVestingScheduleIdForAddressAndIndex(
+        ownerAddress,
+        0
+      );
+
+    await expect(
+      vestingContract.release(vestingScheduleId, amount)
+    ).to.be.revertedWith(
+      "TokenVesting: cannot release tokens, not enough vested tokens"
+    );
+  });
+
+  it("Should revert startLPVesting when trying to start vesting as a non-owner", async function () {
+    await rowaToken.startVesting(vestingContract.address);
+    const beneficiary = await addrs[8].getAddress();
+    const amount = BigNumber.from(1000000);
+
+    const beneficiarySigner = await ethers.getSigner(beneficiary);
+
+    await expect(
+      vestingContract.connect(beneficiarySigner).startLPVesting()
+    ).to.be.revertedWith("Ownable: caller is not the owner");
+  });
+
+  it("Should revert startLiqVesting when trying to start vesting more than once", async function () {
+    await rowaToken.startVesting(vestingContract.address);
+    const beneficiary = await addrs[5].getAddress();
+    const amount = BigNumber.from(100000000000);
+
+    await expect(vestingContract.connect(owner).startLiqVesting()).to.be.emit(
+      vestingContract,
+      "LiqVestingScheduleCreated"
+    );
+
+    await expect(
+      vestingContract.connect(owner).startLiqVesting()
+    ).to.be.revertedWith("Liq vesting already started");
+  });
+
+  it("Should revert startLiqVesting when trying to release more than initial locked amount", async function () {
+    await rowaToken.startVesting(vestingContract.address);
+    const beneficiary = await addrs[5].getAddress();
+    const amount = BigNumber.from(10000000000000);
+
+    await vestingContract.connect(owner).startLiqVesting();
+
+    const ownerAddress = await owner.getAddress();
+
+    const vestingScheduleId =
+      await vestingContract.computeVestingScheduleIdForAddressAndIndex(
+        ownerAddress,
+        0
+      );
+
+    await expect(
+      vestingContract.release(vestingScheduleId, amount)
+    ).to.be.revertedWith(
+      "TokenVesting: cannot release tokens, not enough vested tokens"
+    );
+  });
+
+  it("Should revert startLiqVesting when trying to start vesting as a non-owner", async function () {
+    await rowaToken.startVesting(vestingContract.address);
+    const beneficiary = await addrs[8].getAddress();
+    const amount = BigNumber.from(1000000);
+
+    const beneficiarySigner = await ethers.getSigner(beneficiary);
+
+    await expect(
+      vestingContract.connect(beneficiarySigner).startLiqVesting()
+    ).to.be.revertedWith("Ownable: caller is not the owner");
+  });
+
+  it("Should revert startReserveVesting when trying to start vesting more than once", async function () {
+    await rowaToken.startVesting(vestingContract.address);
+    const beneficiary = await addrs[5].getAddress();
+    const amount = BigNumber.from(100000000000);
+
+    await expect(
+      vestingContract.connect(owner).startReserveVesting()
+    ).to.be.emit(vestingContract, "ReserveVestingScheduleCreated");
+
+    await expect(
+      vestingContract.connect(owner).startReserveVesting()
+    ).to.be.revertedWith("Reserve vesting already started");
+  });
+
+  it("Should revert startReserveVesting when trying to release more than initial locked amount", async function () {
+    await rowaToken.startVesting(vestingContract.address);
+    const beneficiary = await addrs[5].getAddress();
+    const amount = BigNumber.from(10000000000000);
+
+    await vestingContract.connect(owner).startReserveVesting();
+
+    const ownerAddress = await owner.getAddress();
+
+    const vestingScheduleId =
+      await vestingContract.computeVestingScheduleIdForAddressAndIndex(
+        ownerAddress,
+        0
+      );
+
+    await expect(
+      vestingContract.release(vestingScheduleId, amount)
+    ).to.be.revertedWith(
+      "TokenVesting: cannot release tokens, not enough vested tokens"
+    );
+  });
+
+  it("Should revert startLiqVesting when trying to start vesting as a non-owner", async function () {
+    await rowaToken.startVesting(vestingContract.address);
+    const beneficiary = await addrs[8].getAddress();
+    const amount = BigNumber.from(1000000);
+
+    const beneficiarySigner = await ethers.getSigner(beneficiary);
+
+    await expect(
+      vestingContract.connect(beneficiarySigner).startReserveVesting()
+    ).to.be.revertedWith("Ownable: caller is not the owner");
+  });
+
   //Test the require statement in the releasableAmount function:
 
   it("Should revert when trying to check releasable amount of a non-existent vesting", async function () {
@@ -324,10 +587,352 @@ describe("RowaToken and Vesting Contract", function () {
     expect(vested).to.equal(vestingAmount.div(2));
 
     // Release the remaining tokens
-    await vestingContract.connect(owner).release(vestingScheduleId, vested);
+    await expect(
+      vestingContract.connect(owner).release(vestingScheduleId, vested)
+    ).emit(vestingContract, "Released");
+
+    await expect(
+      vestingContract.connect(owner).release(vestingScheduleId, vested)
+    ).to.be.revertedWith(
+      "TokenVesting: cannot release tokens, not enough vested tokens"
+    );
 
     // 5. Check that all vested tokens have been withdrawn and balance is now zero
     vested = await vestingContract.computeReleasableAmount(vestingScheduleId);
     expect(vested).to.equal(0);
+  });
+
+  it("Should revoke a revocable vesting schedule for team vesting", async () => {
+    const ownerAddress = await owner.getAddress();
+    const vestingAmount = BigNumber.from(10000);
+
+    await rowaToken.startVesting(vestingContract.address);
+
+    await vestingContract
+      .connect(owner)
+      .createTeamVesting(ownerAddress, vestingAmount, true);
+    const vestingScheduleId =
+      await vestingContract.computeVestingScheduleIdForAddressAndIndex(
+        ownerAddress,
+        0
+      );
+
+    await expect(vestingContract.revoke(vestingScheduleId)).to.emit(
+      vestingContract,
+      "Revoked"
+    );
+
+    // advance time by one hour and mine a new block
+    await time.increase(3600 * 24 * 30 * 15);
+
+    await expect(vestingContract.computeReleasableAmount(vestingScheduleId)).to
+      .be.reverted;
+
+    // try to release it after revoking
+    await expect(
+      vestingContract.connect(owner).release(vestingScheduleId, vestingAmount)
+    ).to.be.revertedWith("Vesting schedule revoked");
+
+    // try to revoke again
+    await expect(vestingContract.revoke(vestingScheduleId)).to.be.reverted;
+  });
+
+  it("Should revert revoke non owner", async () => {
+    const ownerAddress = await owner.getAddress();
+    const addr1Address = await addrs[1].getAddress();
+    const vestingAmount = BigNumber.from(10000);
+
+    await rowaToken.startVesting(vestingContract.address);
+
+    await vestingContract
+      .connect(owner)
+      .createTeamVesting(ownerAddress, vestingAmount, true);
+    const vestingScheduleId =
+      await vestingContract.computeVestingScheduleIdForAddressAndIndex(
+        ownerAddress,
+        0
+      );
+
+    await expect(
+      vestingContract.connect(addrs[1]).revoke(vestingScheduleId)
+    ).to.be.revertedWith("Ownable: caller is not the owner");
+  });
+
+  it("Should revoke a revocable vesting schedule for advisor vesting", async () => {
+    const ownerAddress = await owner.getAddress();
+    const vestingAmount = BigNumber.from(10000);
+
+    await rowaToken.startVesting(vestingContract.address);
+
+    await vestingContract
+      .connect(owner)
+      .createAdvisorVesting(ownerAddress, vestingAmount, true);
+    const vestingScheduleId =
+      await vestingContract.computeVestingScheduleIdForAddressAndIndex(
+        ownerAddress,
+        0
+      );
+
+    await expect(vestingContract.revoke(vestingScheduleId)).to.emit(
+      vestingContract,
+      "Revoked"
+    );
+  });
+
+  it("Should revoke a revocable vesting schedule for partnerships vesting", async () => {
+    const ownerAddress = await owner.getAddress();
+    const vestingAmount = BigNumber.from(10000);
+
+    await rowaToken.startVesting(vestingContract.address);
+
+    await vestingContract
+      .connect(owner)
+      .createPartnershipsVesting(ownerAddress, vestingAmount, true);
+    const vestingScheduleId =
+      await vestingContract.computeVestingScheduleIdForAddressAndIndex(
+        ownerAddress,
+        0
+      );
+
+    await expect(vestingContract.revoke(vestingScheduleId)).to.emit(
+      vestingContract,
+      "Revoked"
+    );
+  });
+
+  it("Should be able to create a createPrivateSaleVesting vesting schedule", async () => {
+    const ownerAddress = await owner.getAddress();
+    const vestingAmount = BigNumber.from(10000);
+
+    await rowaToken.startVesting(vestingContract.address);
+
+    await expect(
+      vestingContract
+        .connect(owner)
+        .createPrivateSaleVesting(ownerAddress, vestingAmount)
+    ).to.be.emit(vestingContract, "PrivateSaleVestingScheduleCreated");
+  });
+
+  it("Should revert when trying to create a createPrivateSaleVesting vesting schedule as a non-owner", async () => {
+    const ownerAddress = await owner.getAddress();
+    const beneficiary = await addrs[1].getAddress();
+    const beneficiarySigner = await ethers.getSigner(beneficiary);
+
+    const vestingAmount = BigNumber.from(10000);
+
+    await rowaToken.connect(owner).startVesting(vestingContract.address);
+
+    await expect(
+      vestingContract
+        .connect(beneficiarySigner)
+        .createPrivateSaleVesting(ownerAddress, vestingAmount)
+    ).to.be.revertedWith("Ownable: caller is not the owner");
+  });
+
+  it("Should revert when trying to release a createPrivateSaleVesting non beneficiary and non owner can release vested tokens", async () => {
+    const ownerAddress = await owner.getAddress();
+    const secondAddress = await addrs[1];
+    const vestingAmount = BigNumber.from(10000);
+
+    await rowaToken.connect(owner).startVesting(vestingContract.address);
+
+    await expect(
+      vestingContract
+        .connect(owner)
+        .createPrivateSaleVesting(ownerAddress, vestingAmount)
+    ).to.be.emit(vestingContract, "PrivateSaleVestingScheduleCreated");
+
+    const vestingScheduleId =
+      await vestingContract.computeVestingScheduleIdForAddressAndIndex(
+        ownerAddress,
+        0
+      );
+
+    await expect(
+      vestingContract.connect(secondAddress).release(vestingScheduleId, 1000)
+    ).to.be.revertedWith(
+      "TokenVesting: only beneficiary and owner can release vested tokens"
+    );
+  });
+
+  it("Should revert when trying to release a createPrivateSaleVesting before cliff", async () => {
+    const ownerAddress = await owner.getAddress();
+    const secondAddress = await addrs[1];
+    const vestingAmount = BigNumber.from(10000);
+
+    await rowaToken.connect(owner).startVesting(vestingContract.address);
+
+    await vestingContract
+      .connect(owner)
+      .createPrivateSaleVesting(ownerAddress, vestingAmount);
+
+    const vestingScheduleId =
+      await vestingContract.computeVestingScheduleIdForAddressAndIndex(
+        ownerAddress,
+        0
+      );
+
+    await expect(
+      vestingContract.connect(owner).release(vestingScheduleId, 10)
+    ).to.be.revertedWith(
+      "TokenVesting: cannot release tokens, not enough vested tokens"
+    );
+  });
+
+  it("Should revert when trying to release a createPrivateSaleVesting with excess amount", async () => {
+    const ownerAddress = await owner.getAddress();
+    const secondAddress = await addrs[1];
+    const vestingAmount = BigNumber.from(10000000000000);
+
+    await rowaToken.connect(owner).startVesting(vestingContract.address);
+
+    await expect(
+      vestingContract
+        .connect(owner)
+        .createPrivateSaleVesting(ownerAddress, vestingAmount)
+    ).to.be.revertedWith("Private sale vesting amount exceeds total amount");
+  });
+
+  it("Should be able to create a createSeedSaleVesting vesting schedule", async () => {
+    const ownerAddress = await owner.getAddress();
+    const vestingAmount = BigNumber.from(10000);
+
+    await rowaToken.startVesting(vestingContract.address);
+
+    await expect(
+      vestingContract
+        .connect(owner)
+        .createSeedSaleVesting(ownerAddress, vestingAmount)
+    ).to.be.emit(vestingContract, "SeedSaleVestingScheduleCreated");
+  });
+
+  it("Should revert when trying to create a createSeedSaleVesting vesting schedule as a non-owner", async () => {
+    const ownerAddress = await owner.getAddress();
+    const beneficiary = await addrs[1].getAddress();
+    const beneficiarySigner = await ethers.getSigner(beneficiary);
+
+    const vestingAmount = BigNumber.from(10000);
+
+    await rowaToken.connect(owner).startVesting(vestingContract.address);
+
+    await expect(
+      vestingContract
+        .connect(beneficiarySigner)
+        .createSeedSaleVesting(ownerAddress, vestingAmount)
+    ).to.be.revertedWith("Ownable: caller is not the owner");
+  });
+
+  it("Should revert when trying to release a createSeedSaleVesting non beneficiary and non owner can release vested tokens", async () => {
+    const ownerAddress = await owner.getAddress();
+    const secondAddress = await addrs[1];
+    const vestingAmount = BigNumber.from(10000);
+
+    await rowaToken.connect(owner).startVesting(vestingContract.address);
+
+    await expect(
+      vestingContract
+        .connect(owner)
+        .createSeedSaleVesting(ownerAddress, vestingAmount)
+    ).to.be.emit(vestingContract, "SeedSaleVestingScheduleCreated");
+
+    const vestingScheduleId =
+      await vestingContract.computeVestingScheduleIdForAddressAndIndex(
+        ownerAddress,
+        0
+      );
+
+    await expect(
+      vestingContract.connect(secondAddress).release(vestingScheduleId, 1000)
+    ).to.be.revertedWith(
+      "TokenVesting: only beneficiary and owner can release vested tokens"
+    );
+  });
+
+  it("Should revert when trying to release a createSeedSaleVesting before cliff", async () => {
+    const ownerAddress = await owner.getAddress();
+    const secondAddress = await addrs[1];
+    const vestingAmount = BigNumber.from(10000);
+
+    await rowaToken.connect(owner).startVesting(vestingContract.address);
+
+    await vestingContract
+      .connect(owner)
+      .createSeedSaleVesting(ownerAddress, vestingAmount);
+
+    const vestingScheduleId =
+      await vestingContract.computeVestingScheduleIdForAddressAndIndex(
+        ownerAddress,
+        0
+      );
+
+    await expect(
+      vestingContract.connect(owner).release(vestingScheduleId, 10)
+    ).to.be.revertedWith(
+      "TokenVesting: cannot release tokens, not enough vested tokens"
+    );
+  });
+
+  it("Should revert when trying to release a createSeedSaleVesting with excess amount", async () => {
+    const ownerAddress = await owner.getAddress();
+    const secondAddress = await addrs[1];
+    const vestingAmount = BigNumber.from(10000000000000);
+
+    await rowaToken.connect(owner).startVesting(vestingContract.address);
+
+    await expect(
+      vestingContract
+        .connect(owner)
+        .createSeedSaleVesting(ownerAddress, vestingAmount)
+    ).to.be.revertedWith("Seed sale vesting amount exceeds total amount");
+  });
+
+  it("Get last vesting schedule for holder", async () => {
+    await rowaToken.startVesting(vestingContract.address);
+    let addr1Address = await addrs[1].getAddress();
+    const amount = BigNumber.from(1000);
+
+    await vestingContract
+      .connect(owner)
+      .createPublicSaleVesting(addr1Address, amount);
+
+    const vestingScheduleId =
+      await vestingContract.computeVestingScheduleIdForAddressAndIndex(
+        addr1Address,
+        0
+      );
+
+    await vestingContract.getLastVestingScheduleForHolder(addr1Address);
+  });
+
+  it("Get vesting at index and check with vesting schedules of holder", async () => {
+    await rowaToken.startVesting(vestingContract.address);
+    let addr1Address = await addrs[1].getAddress();
+    const amount = BigNumber.from(1000);
+
+    await vestingContract
+      .connect(owner)
+      .createPublicSaleVesting(addr1Address, amount);
+
+    const vestingScheduleId =
+      await vestingContract.computeVestingScheduleIdForAddressAndIndex(
+        addr1Address,
+        0
+      );
+
+    await expect(vestingContract.getVestingIdAtIndex(100)).to.be.revertedWith(
+      "TokenVesting: index out of bounds"
+    );
+
+    const lastVestingScheduleId = await vestingContract.getVestingIdAtIndex(0);
+
+    expect(lastVestingScheduleId).to.equal(vestingScheduleId);
+
+    const vestingScheduleCount =
+      await vestingContract.getVestingSchedulesCountByBeneficiary(addr1Address);
+
+    expect(vestingScheduleCount).to.equal(1);
+     // Test that trying to get a vesting id at an index greater than the number of vesting schedules fails
+  await expect(vestingContract.getVestingIdAtIndex(vestingScheduleCount + 1))
+  .to.be.revertedWith("TokenVesting: index out of bounds");
   });
 });
