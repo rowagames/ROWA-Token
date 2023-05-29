@@ -62,6 +62,139 @@ describe("RowaToken", () => {
     it("Should not start in paused state", async () => {
       expect(await rowaToken.paused()).to.equal(false);
     });
+
+    it("Should not allow non-owner to pause the contract", async () => {
+      await expect(rowaToken.connect(addr1).pause()).to.be.revertedWith(
+        "Ownable: caller is not the owner"
+      );
+    });
+
+    it("Should not allow non-owner to unpause the contract", async () => {
+      await rowaToken.pause();
+      await expect(rowaToken.connect(addr1).unpause()).to.be.revertedWith(
+        "Ownable: caller is not the owner"
+      );
+    });
+
+    it("Should not allow non-owner to snapshot the contract", async () => {
+      await expect(rowaToken.connect(addr1).snapshot()).to.be.revertedWith(
+        "Ownable: caller is not the owner"
+      );
+    });
+
+    it("Should emit ContractPaused event when paused", async () => {
+      await expect(rowaToken.pause()).to.emit(rowaToken, "ContractPaused");
+    });
+
+    it("Should emit ContractUnpaused event when unpaused", async () => {
+      await rowaToken.pause();
+      await expect(rowaToken.unpause()).to.emit(rowaToken, "ContractUnpaused");
+    });
+
+    it("Owner should have 0 balance after vesting started", async () => {
+      await rowaToken.startVesting(vestingContract.address);
+      let addr1Address = await addr1.getAddress();
+      expect(await rowaToken.balanceOf(addr1Address)).to.equal(0);
+      expect(await rowaToken.vestingContract.call()).to.equal(
+        vestingContract.address
+      );
+    });
+
+    it("Should not allow transfer when contract is paused", async () => {
+      await rowaToken.startVesting(vestingContract.address);
+      let addr1Address = await addr1.getAddress();
+      await rowaToken.pause();
+      await expect(
+        rowaToken.connect(addr1).transfer(addr1Address, 10)
+      ).to.be.revertedWith("ERC20Pausable: token transfer while paused");
+    });
+  });
+
+  describe("Snapshot functionality", () => {
+    it("Should create a snapshot", async () => {
+      await rowaToken.startVesting(vestingContract.address);
+      await rowaToken.snapshot();
+      expect(await rowaToken.balanceOfAt(vestingContract.address, 1)).to.equal(
+        INITIAL_SUPPLY
+      );
+    });
+
+    it("Should be the supply of the snapshot equal to the initial supply", async () => {
+      await rowaToken.startVesting(vestingContract.address);
+      await rowaToken.snapshot();
+      expect(await rowaToken.totalSupplyAt(1)).to.equal(INITIAL_SUPPLY);
+    });
+
+    it("Should emit SnapshotCreated event when snapshot created", async () => {
+      await expect(rowaToken.snapshot()).to.emit(rowaToken, "SnapshotCreated");
+    });
+  });
+
+  describe("ERC20 Transfer functionality", () => {
+    it("Should allow owner to transfer tokens after vesting started with release", async () => {
+      await rowaToken.startVesting(vestingContract.address);
+      let addr1Address = await addr1.getAddress();
+      await rowaToken.pause();
+      const amount = BigNumber.from(1000);
+
+      await vestingContract
+        .connect(owner)
+        .createPublicSaleVesting(addr1Address, amount);
+
+      const vestingScheduleId =
+        await vestingContract.computeVestingScheduleIdForAddressAndIndex(
+          addr1Address,
+          0
+        );
+
+      vestingContract.release(vestingScheduleId, amount.div(4));
+    });
+
+    it("Should not allow transfer when contract is paused", async () => {
+      await rowaToken.startVesting(vestingContract.address);
+      let addr1Address = await addr1.getAddress();
+      await rowaToken.pause();
+      const amount = BigNumber.from(1000);
+
+      await vestingContract
+        .connect(owner)
+        .createPublicSaleVesting(addr1Address, amount);
+
+      const vestingScheduleId =
+        await vestingContract.computeVestingScheduleIdForAddressAndIndex(
+          addr1Address,
+          0
+        );
+
+      await expect(
+        vestingContract.release(vestingScheduleId, amount.div(4))
+      ).to.be.revertedWith("ERC20Pausable: token transfer while paused");
+    });
+
+    it("Shoud decimals be 5", async () => {
+      expect(await rowaToken.decimals()).to.equal(5);
+    });
+
+    it("Should be approve and transferFrom", async () => {
+      await rowaToken.startVesting(vestingContract.address);
+      let addr1Address = await addr1.getAddress();
+      const amount = BigNumber.from(1000);
+
+      await vestingContract
+        .connect(owner)
+        .createPublicSaleVesting(addr1Address, amount);
+
+      const vestingScheduleId =
+        await vestingContract.computeVestingScheduleIdForAddressAndIndex(
+          addr1Address,
+          0
+        );
+
+      await rowaToken
+        .connect(addr1)
+        .approve(vestingContract.address, amount.div(4));
+      await vestingContract.release(vestingScheduleId, amount.div(4));
+    });
   });
 
   describe("Vesting", () => {
@@ -89,6 +222,25 @@ describe("RowaToken", () => {
       await expect(
         rowaToken.startVesting(ethers.constants.AddressZero)
       ).to.be.revertedWith("ROWAToken: vesting contract is the zero address");
+    });
+
+    it("Should emit VestingStarted event when vesting started", async () => {
+      await expect(rowaToken.startVesting(vestingContract.address)).to.emit(
+        rowaToken,
+        "VestingStarted"
+      );
+    });
+
+    it("Should not allow non-owner to start vesting", async () => {
+      await expect(
+        rowaToken.connect(addr1).startVesting(vestingContract.address)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+
+    it("Should not allow non-owner to start vesting", async () => {
+      await expect(
+        rowaToken.connect(addr1).startVesting(vestingContract.address)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
     });
   });
 });
