@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.20;
+pragma solidity 0.8.19;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 
 /**
  * @title RowaVesting
- * @author guraygrkn@gmail.com
+ * @author guray.gurkan@creosafe.com
  * @notice Vesting contract for ROWA Token (ROWA) for Value Generation Pool, LP & Staking Rewards, Public Sale, Private Sale, Seed Sale, Initial Liquidity, Reserve, Team, Advisors, Partnerships & Marketing.
  */
 contract RowaVesting is Ownable, ReentrancyGuard {
@@ -28,7 +28,7 @@ contract RowaVesting is Ownable, ReentrancyGuard {
     uint256 public totalVGPVested;
     uint256 public constant VGP_VESTING_DURATION = 50 * 30 days; // 50 months vesting duration for Value Generation Pool.
     uint256 public constant VGP_VESTING_PERIOD = 1 * 30 days; // 1 month vesting period for Value Generation Pool.
-    uint256 public immutable VGP_INITIAL_VESTING_PERCENTAGE = 200; // 2% initial unlock for Value Generation Pool.
+    uint256 public constant VGP_INITIAL_VESTING_PERCENTAGE = 200; // 2% initial unlock for Value Generation Pool.
     address private immutable _VGP_FUND;
 
     // Similar vesting information is defined for LP & Staking Rewards, Public Sale, Private Sale, Seed Sale, Initial Liquidity, Reserve, Team, Advisors.
@@ -44,7 +44,7 @@ contract RowaVesting is Ownable, ReentrancyGuard {
     uint256 public totalLPVested; // The total amount of tokens already vested in the liquidity providers and staking rewards vesting program.
     uint256 public constant LP_VESTING_DURATION = 36 * 30 days; // The duration of the vesting program for liquidity providers and staking rewards.
     uint256 public constant LP_VESTING_PERIOD = 1 * 30 days; // The period between each vesting event for liquidity providers and staking rewards.
-    uint256 public immutable LP_INITIAL_VESTING_PERCENTAGE = 277; // The percentage of tokens initially unlocked for liquidity providers and staking rewards.
+    uint256 public constant LP_INITIAL_VESTING_PERCENTAGE = 277; // The percentage of tokens initially unlocked for liquidity providers and staking rewards.
     address private immutable _LP_FUND; // The fund address for the liquidity providers and staking rewards vesting program.
 
     string public constant PS_VESTING_NAME = "PUBLIC_SALE";// The name of the vesting program for public sale.
@@ -53,7 +53,7 @@ contract RowaVesting is Ownable, ReentrancyGuard {
     uint256 public totalPSVested; // The total amount of tokens already vested in the public sale vesting program.
     uint256 public constant PS_VESTING_DURATION = 4 * 30 days; // The duration of the vesting program for public sale.
     uint256 public constant PS_VESTING_PERIOD = 1 * 30 days; // The period between each vesting event for public sale.
-    uint256 public immutable PS_INITIAL_VESTING_PERCENTAGE = 2500; // The percentage of tokens initially unlocked for public sale.
+    uint256 public constant PS_INITIAL_VESTING_PERCENTAGE = 2500; // The percentage of tokens initially unlocked for public sale.
 
 
     string public constant PRIVS_VESTING_NAME = "PRIVATE_SALE"; // The name of the vesting program for private sale.
@@ -63,7 +63,7 @@ contract RowaVesting is Ownable, ReentrancyGuard {
     uint256 public constant PRIVS_CLIFF_DURATION = 4 * 30 days; // The duration of the cliff period before vesting starts for private sale.
     uint256 public constant PRIVS_VESTING_DURATION = 12 * 30 days; // The duration of the vesting program for private sale.
     uint256 public constant PRIVS_VESTING_PERIOD = 1 * 30 days; // The period between each vesting event for private sale.
-    uint256 public immutable PRIVS_INITIAL_VESTING_PERCENTAGE = 500; // The percentage of tokens initially unlocked for private sale.
+    uint256 public constant PRIVS_INITIAL_VESTING_PERCENTAGE = 500; // The percentage of tokens initially unlocked for private sale.
 
 
     string public constant SEEDS_VESTING_NAME = "SEED_SALE"; // The name of the vesting program for seed sale.
@@ -73,7 +73,7 @@ contract RowaVesting is Ownable, ReentrancyGuard {
     uint256 public constant SEEDS_CLIFF_DURATION = 4 * 30 days; // The duration of the cliff period before vesting starts for seed sale.
     uint256 public constant SEEDS_VESTING_DURATION = 12 * 30 days; // The duration of the vesting program for seed sale.
     uint256 public constant SEEDS_VESTING_PERIOD = 1 * 30 days; // The period between each vesting event for seed sale.
-    uint256 public immutable SEEDS_INITIAL_VESTING_PERCENTAGE = 500; // The percentage of tokens initially unlocked for seed sale.
+    uint256 public constant SEEDS_INITIAL_VESTING_PERCENTAGE = 500; // The percentage of tokens initially unlocked for seed sale.
 
 
     string public constant LIQ_VESTING_NAME = "INITIAL_LIQUIDITY"; // The name of the vesting program for initial liquidity.
@@ -91,7 +91,7 @@ contract RowaVesting is Ownable, ReentrancyGuard {
     uint256 public totalRESERVEVested; // The total amount of tokens already vested in the reserve vesting program.
     uint256 public constant RESERVE_VESTING_DURATION = 5 * 30 days; // The duration of the vesting program for reserve.
     uint256 public constant RESERVE_VESTING_PERIOD = 1 * 30 days; // The period between each vesting event for reserve.
-    uint256 public immutable RESERVE_INITIAL_VESTING_PERCENTAGE = 2_000; // The percentage of tokens initially unlocked for reserve.
+    uint256 public constant RESERVE_INITIAL_VESTING_PERCENTAGE = 2_000; // The percentage of tokens initially unlocked for reserve.
     address private immutable _RESERVE_FUND; // The fund address for the reserve vesting program.
 
     string public constant TEAM_VESTING_NAME = "TEAM"; // The name of the vesting program for team.
@@ -100,7 +100,7 @@ contract RowaVesting is Ownable, ReentrancyGuard {
     uint256 public totalTEAMVested; // The total amount of tokens already vested in the team vesting program.
     uint256 public constant TEAM_VESTING_DURATION = 36 * 30 days; // The duration of the vesting program for the team.
     uint256 public constant TEAM_VESTING_PERIOD = 1 * 30 days; // The period between each vesting event for the team.
-    uint256 public immutable TEAM_INITIAL_VESTING_PERCENTAGE = 0; // The percentage of tokens initially unlocked for the team (0% means no initial unlock).
+    uint256 public constant TEAM_INITIAL_VESTING_PERCENTAGE = 0; // The percentage of tokens initially unlocked for the team (0% means no initial unlock).
 
     string public constant ADVISORS_VESTING_NAME = "ADVISORS"; // The name of the vesting program for advisors.
     uint256 public constant TOTAL_ADVISORS_VESTED = // The total amount of tokens allocated to the advisors vesting program.
@@ -109,7 +109,7 @@ contract RowaVesting is Ownable, ReentrancyGuard {
     uint256 public constant ADVISORS_VESTING_DURATION = 16 * 30 days; // The duration of the vesting program for advisors.
     uint256 public constant ADVISORS_VESTING_PERIOD = 1 * 30 days; // The period between each vesting event for advisors.
     uint256 public ADVISORS_VESTING_AMOUNT = TOTAL_ADVISORS_VESTED / 16; // The amount of tokens vested each period for advisors.
-    uint256 public immutable ADVISORS_INITIAL_VESTING_PERCENTAGE = 0; // The percentage of tokens initially unlocked for advisors (0% means no initial unlock).
+    uint256 public constant ADVISORS_INITIAL_VESTING_PERCENTAGE = 0; // The percentage of tokens initially unlocked for advisors (0% means no initial unlock).
 
 
     
@@ -120,7 +120,7 @@ contract RowaVesting is Ownable, ReentrancyGuard {
     uint256 public totalPARTNERSHIPSVested; // The total amount of tokens already vested in the partnerships and marketing vesting program.
     uint256 public constant PARTNERSHIPS_VESTING_DURATION = 5 * 30 days; // The duration of the vesting program for partnerships and marketing.
     uint256 public constant PARTNERSHIPS_VESTING_PERIOD = 1 * 30 days; // The period between each vesting event for partnerships and marketing.
-    uint256 public immutable PARTNERSHIPS_INITIAL_VESTING_PERCENTAGE = 2_000; // The percentage of tokens initially unlocked for partnerships and marketing.
+    uint256 public constant PARTNERSHIPS_INITIAL_VESTING_PERCENTAGE = 2_000; // The percentage of tokens initially unlocked for partnerships and marketing.
 
     
     IERC20 private immutable _token; // The address of the ERC20 token managed by this contract.
@@ -135,7 +135,6 @@ contract RowaVesting is Ownable, ReentrancyGuard {
         bool initialized; // whether or not the vesting has been initialized
         string name; // name of the vesting schedule
         address beneficiary; // beneficiary of tokens after they are released
-        uint256 cliff; // cliff period in seconds
         uint256 start; // start time of the vesting period
         uint256 duration; // duration of the vesting period in seconds
         uint256 period; // period in seconds between slices
@@ -291,13 +290,10 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
     function startVGPVesting() external onlyOwner {
         require(totalVGPVested == 0, "VGP vesting already started");
 
-        uint256 currentTime = block.timestamp;
-
         _createVestingSchedule(
             _VGP_FUND,
             VGP_VESTING_NAME,
-            currentTime,
-            0,
+            block.timestamp,
             VGP_VESTING_DURATION,
             VGP_VESTING_PERIOD,
             TOTAL_VGP_VESTED,
@@ -319,13 +315,10 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
     function startLPVesting() external onlyOwner {
         require(totalLPVested == 0, "LP vesting already started");
 
-        uint256 currentTime = block.timestamp;
-
         _createVestingSchedule(
             _LP_FUND,
             LP_VESTING_NAME,
-            currentTime,
-            0,
+            block.timestamp,
             LP_VESTING_DURATION,
             LP_VESTING_PERIOD,
             TOTAL_LP_VESTED,
@@ -347,13 +340,10 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
     function startLiqVesting() external onlyOwner {
         require(totalLIQVested == 0, "Liq vesting already started");
 
-        uint256 currentTime = block.timestamp;
-
         _createVestingSchedule(
             _LIQ_FUND,
             LIQ_VESTING_NAME,
-            currentTime,
-            0,
+            block.timestamp,
             0,
             0,
             TOTAL_LIQ_VESTED,
@@ -375,13 +365,10 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
     function startReserveVesting() external onlyOwner {
         require(totalRESERVEVested == 0, "Reserve vesting already started");
 
-        uint256 currentTime = block.timestamp;
-
         _createVestingSchedule(
             _RESERVE_FUND,
             RESERVE_VESTING_NAME,
-            currentTime,
-            0,
+            block.timestamp,
             RESERVE_VESTING_DURATION,
             RESERVE_VESTING_PERIOD,
             TOTAL_RESERVE_VESTED,
@@ -412,13 +399,10 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
             "Public sale vesting amount exceeds total amount"
         );
 
-        uint256 currentTime = block.timestamp;
-
         _createVestingSchedule(
             beneficiary_,
             PS_VESTING_NAME,
-            currentTime,
-            0,
+            block.timestamp,
             PS_VESTING_DURATION,
             PS_VESTING_PERIOD,
             amount_,
@@ -446,14 +430,10 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
             "Private sale vesting amount exceeds total amount"
         );
 
-        uint256 currentTime = block.timestamp;
-        currentTime = currentTime + PRIVS_CLIFF_DURATION;
-
         _createVestingSchedule(
             beneficiary_,
             PRIVS_VESTING_NAME,
-            currentTime,
-            PRIVS_CLIFF_DURATION,
+            block.timestamp + PRIVS_CLIFF_DURATION,
             PRIVS_VESTING_DURATION,
             PRIVS_VESTING_PERIOD,
             amount_,
@@ -480,14 +460,10 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
             "Seed sale vesting amount exceeds total amount"
         );
 
-        uint256 currentTime = block.timestamp;
-        currentTime = currentTime + SEEDS_CLIFF_DURATION;
-
         _createVestingSchedule(
             beneficiary_,
             SEEDS_VESTING_NAME,
-            currentTime,
-            SEEDS_CLIFF_DURATION,
+            block.timestamp + SEEDS_CLIFF_DURATION,
             SEEDS_VESTING_DURATION,
             SEEDS_VESTING_PERIOD,
             amount_,
@@ -516,13 +492,10 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
             "Team vesting amount exceeds total amount"
         );
 
-        uint256 currentTime = block.timestamp;
-
         _createVestingSchedule(
             beneficiary_,
             TEAM_VESTING_NAME,
-            currentTime,
-            0,
+            block.timestamp,
             TEAM_VESTING_DURATION,
             TEAM_VESTING_PERIOD,
             amount_,
@@ -551,13 +524,10 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
             "Advisor vesting amount exceeds total amount"
         );
 
-        uint256 currentTime = block.timestamp;
-
         _createVestingSchedule(
             beneficiary_,
             ADVISORS_VESTING_NAME,
-            currentTime,
-            0,
+            block.timestamp,
             ADVISORS_VESTING_DURATION,
             ADVISORS_VESTING_PERIOD,
             amount_,
@@ -589,13 +559,10 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
             "Partnerships vesting amount exceeds total amount"
         );
 
-        uint256 currentTime = block.timestamp;
-
         _createVestingSchedule(
             beneficiary_,
             PARTNERSHIPS_VESTING_NAME,
-            currentTime,
-            0,
+            block.timestamp,
             PARTNERSHIPS_VESTING_DURATION,
             PARTNERSHIPS_VESTING_PERIOD,
             amount_,
@@ -786,13 +753,14 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
     function _computeReleasableAmount(
         VestingSchedule memory vestingSchedule
     ) internal view returns (uint256) {
-                // Get the current time in seconds
-
         uint256 currentTime = block.timestamp;
-           // If the current time is before the start of the vesting period or if the vesting schedule has been revoked, no tokens can be released
-        if (currentTime < vestingSchedule.start) {
-            return 0;
+
+        // If the initial vesting amount hasn't been fully released yet, release the remainder of it
+        if (currentTime < vestingSchedule.start && vestingSchedule.amountReleased < vestingSchedule.amountInitial) {
+            return
+                vestingSchedule.amountInitial - vestingSchedule.amountReleased;
         }
+
         // If all tokens have already been released, no more tokens can be released
         if (vestingSchedule.amountReleased >= vestingSchedule.amountTotal) {
             return 0;
@@ -801,22 +769,15 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
         if (currentTime >= vestingSchedule.start + vestingSchedule.duration) {
             return vestingSchedule.amountTotal - vestingSchedule.amountReleased;
         }
-        // If the initial vesting amount hasn't been fully released yet, release the remainder of it
-        if (vestingSchedule.amountReleased < vestingSchedule.amountInitial) {
-            return
-                vestingSchedule.amountInitial - vestingSchedule.amountReleased;
-        }
 
         uint256 timeFromStart = currentTime - vestingSchedule.start; // Calculate the elapsed time since the start of the vesting period
         uint secondsPerSlice = vestingSchedule.period;// Get the duration of each vesting slice in seconds
         uint256 vestedSlicePeriods = timeFromStart / secondsPerSlice;// Calculate the number of fully vested periods
         uint256 vestedSeconds = vestedSlicePeriods * secondsPerSlice;// Calculate the total number of seconds vested
-        uint256 vestedAmount = vestingSchedule.amountTotal * vestedSeconds;// Calculate the vested amount proportional to total time
+        uint256 vestedAmount = (vestingSchedule.amountTotal - vestingSchedule.amountInitial) * vestedSeconds;// Calculate the vested amount proportional to total time
 
-            // Normalize the vested amount to the vesting duration and add the initial vested amount
-        vestedAmount =
-            (vestedAmount / vestingSchedule.duration) +
-            vestingSchedule.amountInitial;
+        // Normalize the vested amount to the vesting duration and add the initial vested amount
+        vestedAmount = (vestedAmount / vestingSchedule.duration) + vestingSchedule.amountInitial;
         vestedAmount = vestedAmount - vestingSchedule.amountReleased;
         // Return the releasable amount
 
@@ -848,7 +809,6 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
      * @param beneficiary_ address of the beneficiary to whom vested tokens are transferred
      * @param name_ name of the vesting schedule
      * @param start_ the time (as Unix time) at which point vesting starts
-     * @param cliff_ duration in seconds of the cliff in which tokens will begin to vest
      * @param duration_ duration in seconds of the period in which the tokens will vest
      * @param slicePeriodSeconds_ period in seconds between slices
      * @param amount_ total amount of tokens to be vested
@@ -860,7 +820,6 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
         address beneficiary_,
         string memory name_,
         uint256 start_,
-        uint256 cliff_,
         uint256 duration_,
         uint256 slicePeriodSeconds_,
         uint256 amount_,
@@ -883,7 +842,6 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
             true,
             name_,
             beneficiary_,
-            cliff_,
             start_,
             duration_,
             slicePeriodSeconds_,
