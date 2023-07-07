@@ -21,7 +21,7 @@ contract RowaVesting is Ownable, ReentrancyGuard {
 
     // Vesting Information for different funds
     // Each fund has a name, total tokens vested, vesting duration, vesting period, initial vesting percentage and an associated address.
-    // Some funds also have a cliff duration, where tokens cannot be withdrawn until after the cliff period.
+    // Some funds also have a freeze  duration, where tokens cannot be withdrawn until after the freeze  period.
     string public constant VGP_VESTING_NAME = "VALUE_GENERATION_POOL";
     uint256 public constant TOTAL_VGP_VESTED =
         360_000_000 * 10 ** uint256(DECIMALS); // Total tokens vested for Value Generation Pool.
@@ -60,7 +60,7 @@ contract RowaVesting is Ownable, ReentrancyGuard {
     uint256 public constant TOTAL_PRIVS_VESTED = // The total amount of tokens allocated to the private sale vesting program.
         40_000_000 * 10 ** uint256(DECIMALS);
     uint256 public totalPRIVSVested; // The total amount of tokens already vested in the private sale vesting program.
-    uint256 public constant PRIVS_CLIFF_DURATION = 4 * 30 days; // The duration of the cliff period before vesting starts for private sale.
+    uint256 public constant PRIVS_FREEZE_DURATION = 4 * 30 days; // The duration of the freeze  period before vesting starts for private sale.
     uint256 public constant PRIVS_VESTING_DURATION = 12 * 30 days; // The duration of the vesting program for private sale.
     uint256 public constant PRIVS_VESTING_PERIOD = 1 * 30 days; // The period between each vesting event for private sale.
     uint256 public constant PRIVS_INITIAL_VESTING_PERCENTAGE = 500; // The percentage of tokens initially unlocked for private sale.
@@ -70,7 +70,7 @@ contract RowaVesting is Ownable, ReentrancyGuard {
     uint256 public constant TOTAL_SEEDS_VESTED = // The total amount of tokens allocated to the seed sale vesting program.
         30_000_000 * 10 ** uint256(DECIMALS);
     uint256 public totalSEEDSVested; // The total amount of tokens already vested in the seed sale vesting program.
-    uint256 public constant SEEDS_CLIFF_DURATION = 4 * 30 days; // The duration of the cliff period before vesting starts for seed sale.
+    uint256 public constant SEEDS_FREEZE_DURATION = 4 * 30 days; // The duration of the freeze  period before vesting starts for seed sale.
     uint256 public constant SEEDS_VESTING_DURATION = 12 * 30 days; // The duration of the vesting program for seed sale.
     uint256 public constant SEEDS_VESTING_PERIOD = 1 * 30 days; // The period between each vesting event for seed sale.
     uint256 public constant SEEDS_INITIAL_VESTING_PERCENTAGE = 500; // The percentage of tokens initially unlocked for seed sale.
@@ -206,6 +206,10 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
     /**
      * @dev Creates a vesting contract.
      * @param token_ address of the ERC20 token contract
+     * @param VGP_FUND_ address of the VGP fund
+     * @param LP_FUND_ address of the LP fund
+     * @param LIQ_FUND_ address of the LIQ fund
+     * @param RESERVE_FUND_ address of the RESERVE fund
      */
         // Constructor of the contract. It initializes the contract with the addresses of the token and several funds.
     constructor(
@@ -285,7 +289,7 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
     }
 
     /**
-     * @dev Starts vgp token vesting for a given beneficiary.
+     * @dev Starts vgp token vesting for _VGP_FUND address.
      */
     function startVGPVesting() external onlyOwner {
         require(totalVGPVested == 0, "VGP vesting already started");
@@ -310,7 +314,7 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
     }
 
     /**
-     * @dev Starts lp token vesting for a given beneficiary.
+     * @dev Starts lp token vesting for _LP_FUND address.
      */
     function startLPVesting() external onlyOwner {
         require(totalLPVested == 0, "LP vesting already started");
@@ -335,7 +339,7 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
     }
 
     /**
-     * @dev Starts liq token vesting for a given beneficiary.
+     * @dev Starts liq token vesting for _LIQ_FUND address.
      */
     function startLiqVesting() external onlyOwner {
         require(totalLIQVested == 0, "Liq vesting already started");
@@ -360,7 +364,7 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
     }
 
     /**
-     * @dev Starts reserve vesting for a given beneficiary.
+     * @dev Starts reserve vesting for _RESERVE_FUND address.
      */
     function startReserveVesting() external onlyOwner {
         require(totalRESERVEVested == 0, "Reserve vesting already started");
@@ -433,7 +437,7 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
         _createVestingSchedule(
             beneficiary_,
             PRIVS_VESTING_NAME,
-            block.timestamp + PRIVS_CLIFF_DURATION,
+            block.timestamp + PRIVS_FREEZE_DURATION,
             PRIVS_VESTING_DURATION,
             PRIVS_VESTING_PERIOD,
             amount_,
@@ -450,6 +454,7 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
      * @dev Starts seed sale token vesting for a given beneficiary.
      * @param beneficiary_ the beneficiary of the tokens
      * @param amount_ the amount of tokens to be vested
+     * @notice revokable is set to false for seed sale vesting as it is not possible to revoke tokens that have already been sold
      */
     function createSeedSaleVesting(
         address beneficiary_,
@@ -463,7 +468,7 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
         _createVestingSchedule(
             beneficiary_,
             SEEDS_VESTING_NAME,
-            block.timestamp + SEEDS_CLIFF_DURATION,
+            block.timestamp + SEEDS_FREEZE_DURATION,
             SEEDS_VESTING_DURATION,
             SEEDS_VESTING_PERIOD,
             amount_,
@@ -580,6 +585,7 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
 
     /**
      * @notice Computes the vested amount of tokens for the given vesting schedule identifier.
+     * @param vestingScheduleId the vesting schedule identifier
      * @return the vested amount
      */
     function computeReleasableAmount(
@@ -593,6 +599,7 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
 
     /**
      * @dev Returns the last vesting schedule for a given holder address.
+     * @param holder address of the vesting beneficiary
      */
     function getLastVestingScheduleForHolder(
         address holder
@@ -608,6 +615,7 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
 
     /**
      * @dev Returns the number of vesting schedules associated to a beneficiary.
+     * @param _beneficiary address of the vesting beneficiary
      * @return the number of vesting schedules
      */
     function getVestingSchedulesCountByBeneficiary(
@@ -618,6 +626,7 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
 
     /**
      * @dev Returns the vesting schedule id at the given index.
+     * @param index index of the vesting schedule in the vestings mapping
      * @return the vesting id
      */
     function getVestingIdAtIndex(
@@ -632,6 +641,8 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
 
     /**
      * @notice Returns the vesting schedule information for a given holder and index.
+     * @param holder address of the vesting beneficiary
+     * @param index index of the vesting schedule in the vestings mapping
      * @return the vesting schedule structure information
      */
     function getVestingScheduleByAddressAndIndex(
@@ -707,6 +718,7 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
 
     /**
      * @notice Returns the vesting schedule information for a given identifier.
+     * @param vestingScheduleId the vesting schedule identifier
      * @return the vesting schedule structure information
      */
     function getVestingSchedule(
@@ -725,6 +737,8 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
 
     /**
      * @dev Computes the next vesting schedule identifier for a given holder address.
+     * @param holder address of the vesting beneficiary
+     * @return vesting schedule identifier for the next vesting schedule for the holder address
      */
     function computeNextVestingScheduleIdForHolder(
         address holder
@@ -738,6 +752,9 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
 
     /**
      * @dev Computes the vesting schedule identifier for an address and an index.
+     * @param holder address of the vesting beneficiary
+     * @param index the index of the vesting schedule for the holder
+     * @return schedule identifier for the specified vesting schedule
      */
     function computeVestingScheduleIdForAddressAndIndex(
         address holder,
@@ -748,15 +765,16 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
 
     /**
      * @dev Computes the releasable amount of tokens for a vesting schedule.
+     * @param vestingSchedule the VestingSchedule for which the releasable amount will be calculated
      * @return the amount of releasable tokens
      */
     function _computeReleasableAmount(
         VestingSchedule memory vestingSchedule
     ) internal view returns (uint256) {
-        uint256 currentTime = block.timestamp;
+        
 
         // If the initial vesting amount hasn't been fully released yet, release the remainder of it
-        if (currentTime < vestingSchedule.start && vestingSchedule.amountReleased < vestingSchedule.amountInitial) {
+        if (block.timestamp < vestingSchedule.start && vestingSchedule.amountReleased < vestingSchedule.amountInitial) {
             return
                 vestingSchedule.amountInitial - vestingSchedule.amountReleased;
         }
@@ -766,11 +784,11 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
             return 0;
         }
         //If vesting schedule duration has elapsed, return the remaining releasable amount
-        if (currentTime >= vestingSchedule.start + vestingSchedule.duration) {
+        if (block.timestamp >= vestingSchedule.start + vestingSchedule.duration) {
             return vestingSchedule.amountTotal - vestingSchedule.amountReleased;
         }
 
-        uint256 timeFromStart = currentTime - vestingSchedule.start; // Calculate the elapsed time since the start of the vesting period
+        uint256 timeFromStart = block.timestamp - vestingSchedule.start; // Calculate the elapsed time since the start of the vesting period
         uint secondsPerSlice = vestingSchedule.period;// Get the duration of each vesting slice in seconds
         uint256 vestedSlicePeriods = timeFromStart / secondsPerSlice;// Calculate the number of fully vested periods
         uint256 vestedSeconds = vestedSlicePeriods * secondsPerSlice;// Calculate the total number of seconds vested
@@ -786,6 +804,9 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
 
     /**
      * @dev Returns initial vesting amount.
+     * @param totalVested total vesting amount
+     * @param initialVestingPercentage the percentage of initial vesting 
+     * @return the initial vesting amount
      */
     function getInitialVestingAmount(
         uint256 totalVested,
@@ -796,6 +817,9 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
 
     /**
      * @dev Returns true if the two strings are equal.
+     * @param a first string to be compared
+     * @param b second string to be compared
+     * @return boolean whether the two strings are equal
      */
     function equal(
         string memory a,
