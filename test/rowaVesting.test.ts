@@ -931,8 +931,9 @@ describe("RowaToken and Vesting Contract", function () {
       await vestingContract.getVestingSchedulesCountByBeneficiary(addr1Address);
 
     expect(vestingScheduleCount).to.equal(1);
-     // Test that trying to get a vesting id at an index greater than the number of vesting schedules fails
-  await expect(vestingContract.getVestingIdAtIndex(vestingScheduleCount + 1))
-  .to.be.revertedWith("TokenVesting: index out of bounds");
+    // Test that trying to get a vesting id at an index greater than the number of vesting schedules fails
+    await expect(
+      vestingContract.getVestingIdAtIndex(vestingScheduleCount + 1)
+    ).to.be.revertedWith("TokenVesting: index out of bounds");
   });
 });
