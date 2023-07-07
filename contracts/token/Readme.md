@@ -123,18 +123,35 @@ Each vesting schedule has its own predefined maximum allocation, vesting duratio
 
 ROWA Vesting Contract provides the following functions:
 
+- `startVGPVesting`: Starts vgp token vesting for _VGP_FUND address.
+- `startLPVesting`: Starts lp token vesting for _LP_FUND address.
+- `startLiqVesting`: Starts liq token vesting for _LIQ_FUND address.
+- `startReserveVesting`: Starts reserve vesting for _RESERVE_FUND address.
 - `createPublicSaleVesting(address beneficiary_, uint256 amount_)`: Starts Public Sale vesting for a given beneficiary. Can only be called by the contract owner.
 - `createPrivateSaleVesting(address beneficiary_, uint256 amount_)`: Starts Private Sale vesting for a given beneficiary. Can only be called by the contract owner.
 - `createSeedSaleVesting(address beneficiary_, uint256 amount_)`: Starts Seed Sale vesting for a given beneficiary. Can only be called by the contract owner.
 - `createTeamVesting(address beneficiary_, uint256 amount_, bool revokable_)`: Starts Team vesting for a given beneficiary. Can only be called by the contract owner.
 - `createAdvisorVesting(address beneficiary_, uint256 amount_, bool revokable_)`: Starts Advisor vesting for a given beneficiary. Can only be called by the contract owner.
 - `createPartnershipsVesting(address beneficiary_, uint256 amount_, bool revokable_)`: Starts Partnerships vesting for a given beneficiary. Can only be called by the contract owner.
+- `computeReleasableAmount(bytes32 vestingScheduleId)`: Computes the vested amount of tokens for the given vesting schedule identifier.
+- `getLastVestingScheduleForHolder(address holder)`: Returns the last vesting schedule for a given holder address.
+- `getVestingSchedulesCountByBeneficiary(address _beneficiary)`: Returns the number of vesting schedules associated to a beneficiary.
+- `getVestingIdAtIndex(uint256 index)`: Returns the vesting schedule id at the given index.
+- `getVestingScheduleByAddressAndIndex(address holder, uint256 index)`: Returns the vesting schedule information for a given holder and index.
+- `getVestingSchedulesTotalAmount`: Returns the total amount of vesting schedules.
+- `getTokenAddress`: Returns the address of the ERC20 token managed by the vesting contract.
 - `release(address beneficiary, string memory vestingName)`: Releases vested tokens for the beneficiary. Can be called by the beneficiary or anyone else.
 - `revoke(address beneficiary, string memory vestingName)`: Revokes a revocable vesting schedule. Can only be called by the contract owner.
+- `getVestingSchedulesCount`: Returns the number of vesting schedules managed by this contract.
 - `getVestingSchedule(address beneficiary, string memory vestingName)`: Returns the vesting schedule details for a given beneficiary and vesting type name.
+- `getWithdrawableAmount`: Returns the amount of tokens that can be withdrawn by the owner.
+- `computeNextVestingScheduleIdForHolder`: Computes the next vesting schedule identifier for a given holder address.
+- `computeVestingScheduleIdForAddressAndIndex`: Computes the vesting schedule identifier for an address and an index.
+- `_computeReleasableAmount(VestingSchedule memory vestingSchedule)`: Computes the releasable amount of tokens for a vesting schedule.
 - `getCurrentTime()`: Returns the current time.
 - `getInitialVestingAmount(uint256 totalVested, uint256 initialVestingPercentage)`: Returns the initial vesting amount.
 - `equal(string memory a, string memory b)`: Compares two strings and returns true if they are equal, otherwise returns false. This function is used internally for comparison purposes.
+- `_createVestingSchedule( address beneficiary_, string memory name_, uint256 start_, uint256 duration_, uint256 slicePeriodSeconds_, uint256 amount_, uint256 amountInitial_, bool revokable_)`: Create a vesting schedule for a beneficiary. It is meant to be called by the owner and internally.
 
 ## Additional Notes
 
