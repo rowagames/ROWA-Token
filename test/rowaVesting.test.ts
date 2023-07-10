@@ -3,6 +3,7 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 import { BigNumber, Contract, Signer } from "ethers";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
+import { float } from "hardhat/internal/core/params/argumentTypes";
 
 // Define the test suite
 describe("RowaToken and Vesting Contract", function () {
@@ -298,7 +299,7 @@ describe("RowaToken and Vesting Contract", function () {
 
   //Test the require statement in the release function:
 
-  it("Should revert when trying to release before the cliff period", async function () {
+  it("Should revert when trying to release before the freeze period", async function () {
     await rowaToken.startVesting(vestingContract.address);
     const beneficiary = await addrs[8].getAddress();
     const amount = BigNumber.from(1000);
@@ -572,7 +573,6 @@ describe("RowaToken and Vesting Contract", function () {
     );
     expect(vested).to.equal(vestingAmount.div(4));
 
-    // advance time by one hour and mine a new block
     await time.increase(3600 * 24 * 30 * 15);
 
     // Check that half of the vested amount is available for withdrawal
@@ -755,7 +755,7 @@ describe("RowaToken and Vesting Contract", function () {
     );
   });
 
-  it("Should revert when trying to release a createPrivateSaleVesting before cliff", async () => {
+  it("Vesting Flow: Should be able to release vested tokens for createPrivateSaleVesting vesting schedule", async () => {
     const ownerAddress = await owner.getAddress();
     const secondAddress = await addrs[1];
     const vestingAmount = BigNumber.from(10000);
@@ -772,11 +772,165 @@ describe("RowaToken and Vesting Contract", function () {
         0
       );
 
-    await expect(
-      vestingContract.connect(owner).release(vestingScheduleId, 10)
-    ).to.be.revertedWith(
-      "TokenVesting: cannot release tokens, not enough vested tokens"
-    );
+    let releasableAmount = await vestingContract
+      .connect(owner)
+      .computeReleasableAmount(vestingScheduleId);
+
+    await expect(releasableAmount).to.equal(500);
+
+    await vestingContract.connect(owner).release(vestingScheduleId, 100);
+
+    // advance time by 10 weeks
+    await time.increase(time.duration.weeks(10));
+    releasableAmount = await vestingContract
+      .connect(owner)
+      .computeReleasableAmount(vestingScheduleId);
+
+    expect(releasableAmount).to.equal(400);
+
+    await time.increase(time.duration.weeks(12));
+    releasableAmount = await vestingContract
+      .connect(owner)
+      .computeReleasableAmount(vestingScheduleId);
+
+    let expectedAmount = Math.floor(9500 / 12 + 400);
+
+    expect(releasableAmount).to.equal(expectedAmount);
+
+    await vestingContract.connect(owner).release(vestingScheduleId, 400);
+
+    releasableAmount = await vestingContract
+      .connect(owner)
+      .computeReleasableAmount(vestingScheduleId);
+
+    expectedAmount = Math.floor(9500 / 12 + 400) - 400;
+
+    expect(releasableAmount).to.equal(expectedAmount);
+
+    await time.increase(time.duration.weeks(100));
+    releasableAmount = await vestingContract
+      .connect(owner)
+      .computeReleasableAmount(vestingScheduleId);
+
+    expectedAmount = 9500;
+
+    expect(releasableAmount).to.equal(expectedAmount);
+  });
+
+  it("Vesting Flow: Shouldn't be able to release non initial vested tokens for createPrivateSaleVesting vesting schedule if not started (before freeze)", async () => {
+    const ownerAddress = await owner.getAddress();
+    const secondAddress = await addrs[1];
+    const vestingAmount = BigNumber.from(10000);
+
+    await rowaToken.connect(owner).startVesting(vestingContract.address);
+
+    await vestingContract
+      .connect(owner)
+      .createPrivateSaleVesting(ownerAddress, vestingAmount);
+
+    const vestingScheduleId =
+      await vestingContract.computeVestingScheduleIdForAddressAndIndex(
+        ownerAddress,
+        0
+      );
+
+    let releasableAmount = await vestingContract
+      .connect(owner)
+      .computeReleasableAmount(vestingScheduleId);
+
+    await expect(releasableAmount).to.equal(500);
+
+    // advance time by 10 weeks
+    await time.increase(time.duration.weeks(10));
+    releasableAmount = await vestingContract
+      .connect(owner)
+      .computeReleasableAmount(vestingScheduleId);
+
+    expect(releasableAmount).to.equal(500);
+
+    await time.increase(time.duration.weeks(12));
+    releasableAmount = await vestingContract
+      .connect(owner)
+      .computeReleasableAmount(vestingScheduleId);
+
+    let expectedAmount = Math.floor(9500 / 12 + 500);
+
+    expect(releasableAmount).to.equal(expectedAmount);
+
+    releasableAmount = await vestingContract
+      .connect(owner)
+      .computeReleasableAmount(vestingScheduleId);
+
+    expectedAmount = Math.floor(9500 / 12 + 500);
+
+    expect(releasableAmount).to.equal(expectedAmount);
+
+    await time.increase(time.duration.weeks(100));
+    releasableAmount = await vestingContract
+      .connect(owner)
+      .computeReleasableAmount(vestingScheduleId);
+
+    expectedAmount = 10000;
+
+    expect(releasableAmount).to.equal(expectedAmount);
+  });
+
+  it("Vesting Flow: Should be able to release vested tokens for createPrivateSaleVesting vesting schedule without no release until the end of the vesting period", async () => {
+    const ownerAddress = await owner.getAddress();
+    const secondAddress = await addrs[1];
+    const vestingAmount = BigNumber.from(10000);
+
+    await rowaToken.connect(owner).startVesting(vestingContract.address);
+
+    await vestingContract
+      .connect(owner)
+      .createPrivateSaleVesting(ownerAddress, vestingAmount);
+
+    const vestingScheduleId =
+      await vestingContract.computeVestingScheduleIdForAddressAndIndex(
+        ownerAddress,
+        0
+      );
+
+    let releasableAmount = await vestingContract
+      .connect(owner)
+      .computeReleasableAmount(vestingScheduleId);
+
+    await expect(releasableAmount).to.equal(500);
+
+    // advance time by 10 weeks
+    await time.increase(time.duration.weeks(10));
+    releasableAmount = await vestingContract
+      .connect(owner)
+      .computeReleasableAmount(vestingScheduleId);
+
+    expect(releasableAmount).to.equal(500);
+
+    await time.increase(time.duration.weeks(12));
+    releasableAmount = await vestingContract
+      .connect(owner)
+      .computeReleasableAmount(vestingScheduleId);
+
+    let expectedAmount = Math.floor(9500 / 12 + 500);
+
+    expect(releasableAmount).to.equal(expectedAmount);
+
+    releasableAmount = await vestingContract
+      .connect(owner)
+      .computeReleasableAmount(vestingScheduleId);
+
+    expectedAmount = Math.floor(9500 / 12 + 500);
+
+    expect(releasableAmount).to.equal(expectedAmount);
+
+    await time.increase(time.duration.weeks(100));
+    releasableAmount = await vestingContract
+      .connect(owner)
+      .computeReleasableAmount(vestingScheduleId);
+
+    expectedAmount = 10000;
+
+    expect(releasableAmount).to.equal(expectedAmount);
   });
 
   it("Should revert when trying to release a createPrivateSaleVesting with excess amount", async () => {
@@ -848,7 +1002,7 @@ describe("RowaToken and Vesting Contract", function () {
     );
   });
 
-  it("Should revert when trying to release a createSeedSaleVesting before cliff", async () => {
+  it("Should revert when trying to release a createSeedSaleVesting before freeze", async () => {
     const ownerAddress = await owner.getAddress();
     const secondAddress = await addrs[1];
     const vestingAmount = BigNumber.from(10000);
@@ -865,11 +1019,7 @@ describe("RowaToken and Vesting Contract", function () {
         0
       );
 
-    await expect(
-      vestingContract.connect(owner).release(vestingScheduleId, 10)
-    ).to.be.revertedWith(
-      "TokenVesting: cannot release tokens, not enough vested tokens"
-    );
+    await vestingContract.connect(owner).release(vestingScheduleId, 500);
   });
 
   it("Should revert when trying to release a createSeedSaleVesting with excess amount", async () => {
