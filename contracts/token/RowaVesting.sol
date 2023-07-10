@@ -773,7 +773,7 @@ event Released(uint256 amount); // An event that is emitted when tokens are rele
     ) internal view returns (uint256) {
         // If the initial vesting amount hasn't been fully released yet, release the remainder of it
         if (block.timestamp < vestingSchedule.start) {
-            if (vestingSchedule.amountReleased <= vestingSchedule.amountInitial) {
+            if (vestingSchedule.amountReleased < vestingSchedule.amountInitial) {
                 return
                     vestingSchedule.amountInitial -
                     vestingSchedule.amountReleased;

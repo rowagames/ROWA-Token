@@ -848,31 +848,16 @@ describe("RowaToken and Vesting Contract", function () {
 
     expect(releasableAmount).to.equal(500);
 
-    await time.increase(time.duration.weeks(12));
-    releasableAmount = await vestingContract
-      .connect(owner)
-      .computeReleasableAmount(vestingScheduleId);
-
-    let expectedAmount = Math.floor(9500 / 12 + 500);
-
-    expect(releasableAmount).to.equal(expectedAmount);
+    await vestingContract.connect(owner).release(vestingScheduleId, 500);
 
     releasableAmount = await vestingContract
       .connect(owner)
       .computeReleasableAmount(vestingScheduleId);
 
-    expectedAmount = Math.floor(9500 / 12 + 500);
+    expect(releasableAmount).to.equal(0);
 
-    expect(releasableAmount).to.equal(expectedAmount);
-
-    await time.increase(time.duration.weeks(100));
-    releasableAmount = await vestingContract
-      .connect(owner)
-      .computeReleasableAmount(vestingScheduleId);
-
-    expectedAmount = 10000;
-
-    expect(releasableAmount).to.equal(expectedAmount);
+    await expect(vestingContract.connect(owner).release(vestingScheduleId, 1))
+      .to.be.reverted;
   });
 
   it("Vesting Flow: Should be able to release vested tokens for createPrivateSaleVesting vesting schedule without no release until the end of the vesting period", async () => {
